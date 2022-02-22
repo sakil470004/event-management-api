@@ -24,13 +24,77 @@ async function run() {
         const database = client.db('event-management');
         const eventsCollection = database.collection('events');
         const usersCollection = database.collection('users');
+        const invitesCollection = database.collection('invites');
 
         // GET API
         app.get('/events', async (req, res) => {
             const cursor = eventsCollection.find({});
-            const foods = await cursor.toArray();
-            res.send(foods);
+
+            const page = req.query.page;
+            const size = parseInt(req.query.size);
+            let events;
+            const count = await eventsCollection.countDocuments();
+
+            if (page) {
+                events = await cursor.skip(page * size).limit(size).toArray();
+            }
+            else {
+                events = await cursor.toArray();
+            }
+
+            res.send({
+                count,
+                events
+            });
+
         })
+        app.get('/userDetails', async (req, res) => {
+            const email = req.query.email;
+
+            const query = { email: email }
+            const cursor = await usersCollection.findOne(query);
+
+            res.json(cursor)
+
+        })
+        app.get('/myevent', async (req, res) => {
+            const email = req.query.email;
+
+            const query = { email: email }
+            const cursor = await eventsCollection.find(query);
+            const result = await cursor.toArray()
+            res.json(result)
+
+
+        })
+        app.get('/invite', async (req, res) => {
+            const email = req.query.email;
+
+            const query = { email: email }
+            const cursor = await invitesCollection.find(query);
+            const result = await cursor.toArray()
+            res.json(result)
+
+        })
+        app.get('/eventsWithAction', async (req, res) => {
+            const email = req.query.email;
+            const action = req.query.action;
+            const query = { email: email }
+            const cursor = await eventsCollection.find(query);
+            const result = await cursor.toArray()
+            if (action === 'sortA') {
+                result.sort((a, b) => (a.title > b.title) ? 1 : ((b.title > a.title) ? -1 : 0));
+                res.json(result)
+            } else if (action === 'sortD') {
+                result.sort((a, b) => (a.title < b.title) ? 1 : ((b.title < a.title) ? -1 : 0));
+                res.json(result)
+            }
+
+            else {
+                res.json({})
+            }
+        })
+
         // // get single foods
         // app.get('/foods/:id', async (req, res) => {
         //     const id = req.params.id;
@@ -62,15 +126,59 @@ async function run() {
                 res.json(result)
             }
         })
+        app.post('/addevent', async (req, res) => {
+            const eventData = req.body;
+            result = await eventsCollection.insertOne(eventData);
+            res.json(result)
 
+        })
+        app.post('/invite', async (req, res) => {
+            const inviteData = req.body;
+            result = await invitesCollection.insertOne(inviteData);
+            res.json(result)
+
+        })
+
+        // PUT api
+        app.put('/editevent', async (req, res) => {
+            const eventD = req.body;
+            const filter = { _id: ObjectId(eventD._id) };
+            // const options = { upsert: true };
+            const { _id, ...rest } = eventD
+            const updateDoc = { $set: { ...rest } };
+            const result = await eventsCollection.updateOne(filter, updateDoc);
+            res.json(result);
+
+        })
+        app.put('/changePassword', async (req, res) => {
+            const userD = req.body;
+            const filter = { _id: ObjectId(userD._id) };
+            // const options = { upsert: true };
+            const result = await usersCollection.findOne(filter);
+            if (result.password === userD.password) {
+                const updateDoc = { $set: { password: userD.npassword } };
+                const updated = await usersCollection.updateOne(filter, updateDoc);
+                res.json(updated);
+            } else {
+                res.json({ massage: 'failed' })
+            }
+
+        })
+        app.put('/esssditEvent', async (req, res) => {
+            const eventDetails = req.body;
+            // console.log(eventDetails)
+            const filter = { _id: ObjectId(eventDetails._id) };
+            // const options = { upsert: true };
+            const { _id, title, description, img } = eventDetails
+            const updateDoc = { $set: { title: title, description: description, img: img } };
+            const result = await eventsCollection.updateOne(filter, updateDoc);
+
+            console.log(result)
+            res.json(result);
+
+        })
         // Delete Api
         // delete one
-        app.delete('/foods/:id', async (req, res) => {
-            const id = req.params.id;
-            const query = { _id: ObjectId(id) };
-            const result = await eventsCollection.deleteOne(query);
-            res.json(result);
-        })
 
 
     } finally {
