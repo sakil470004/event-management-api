@@ -48,6 +48,13 @@ async function run() {
             });
 
         })
+        // get one event 
+        app.get('/singleEvent', async (req, res) => {
+            const id = req.query.id;
+            const query = { _id: ObjectId(id) }
+            const cursor = await eventsCollection.findOne(query);
+            res.json(cursor)
+        })
         app.get('/userDetails', async (req, res) => {
             const email = req.query.email;
 
@@ -67,6 +74,7 @@ async function run() {
 
 
         })
+
         app.get('/invite', async (req, res) => {
             const email = req.query.email;
 
@@ -94,14 +102,6 @@ async function run() {
                 res.json({})
             }
         })
-
-        // // get single foods
-        // app.get('/foods/:id', async (req, res) => {
-        //     const id = req.params.id;
-        //     const query = { _id: ObjectId(id) };
-        //     const food = await servicesCollection.findOne(query);
-        //     res.json(food);
-        // })
 
         // POST API 
         // insert one
