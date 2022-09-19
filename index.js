@@ -13,8 +13,8 @@ app.use(express.json());
 app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
     next();
-  });
-  
+});
+
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.poyqe.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
 // console.log(uri)
@@ -112,8 +112,11 @@ async function run() {
         // insert one
         app.post('/user', async (req, res) => {
             const loginData = req.body;
+            if (!loginData?.email && !loginData?.password) {
+                res.json({ message: 'Fill Data Correctly' })
+            }
             const result = await usersCollection.findOne({ email: loginData.email });
-            if (result.password === loginData.password) {
+            if (result?.password === loginData?.password) {
                 res.json({ message: 'success' })
             } else {
                 res.json({ message: 'failed' })
@@ -122,6 +125,9 @@ async function run() {
         })
         app.post('/adduser', async (req, res) => {
             const loginData = req.body;
+            if (!loginData?.email || loginData?.password) {
+                res.json({ message: 'Fill The data Correctly' })
+            }
             let result = await usersCollection.findOne({ email: loginData.email });
             if (result) {
                 res.json({ message: 'already have account' })
