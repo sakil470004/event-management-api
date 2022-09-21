@@ -32,6 +32,9 @@ async function run() {
         const invitesCollection = database.collection('invites');
 
         // GET API
+        app.get('/',async(req,res)=>{
+            res.send('<h1 style="color:red">your event management api is running</h1>')
+        })
         app.get('/events', async (req, res) => {
             const cursor = eventsCollection.find({});
 
@@ -113,28 +116,31 @@ async function run() {
         app.post('/user', async (req, res) => {
             const loginData = req.body;
             if (!loginData?.email && !loginData?.password) {
-                res.json({ message: 'Fill Data Correctly' })
-            }
-            const result = await usersCollection.findOne({ email: loginData.email });
-            if (result?.password === loginData?.password) {
-                res.json({ message: 'success' })
+                res.send(200).json({ message: 'Fill Data Correctly' })
             } else {
-                res.json({ message: 'failed' })
 
+
+                const result = await usersCollection.findOne({ email: loginData.email });
+                if (result?.password === loginData?.password) {
+                    res.json({ message: 'success' })
+                } else {
+                    res.json({ message: 'failed' })
+
+                }
             }
         })
         app.post('/adduser', async (req, res) => {
             const loginData = req.body;
-            if (!loginData?.email || loginData?.password) {
+            if (!loginData?.email || !loginData?.password) {
                 res.json({ message: 'Fill The data Correctly' })
-            }
-            let result = await usersCollection.findOne({ email: loginData.email });
-            if (result) {
-                res.json({ message: 'already have account' })
             } else {
-
-                result = await usersCollection.insertOne(loginData);
-                res.json(result)
+                let result = await usersCollection.findOne({ email: loginData.email });
+                if (result) {
+                    res.json({ message: 'already have account' })
+                } else {
+                    result = await usersCollection.insertOne(loginData);
+                    res.json(result)
+                }
             }
         })
         app.post('/addevent', async (req, res) => {
@@ -177,14 +183,12 @@ async function run() {
         })
         app.put('/esssditEvent', async (req, res) => {
             const eventDetails = req.body;
-            // console.log(eventDetails)
             const filter = { _id: ObjectId(eventDetails._id) };
             // const options = { upsert: true };
             const { _id, title, description, img } = eventDetails
             const updateDoc = { $set: { title: title, description: description, img: img } };
             const result = await eventsCollection.updateOne(filter, updateDoc);
 
-            console.log(result)
             res.json(result);
 
         })
@@ -203,7 +207,7 @@ run().catch(console.dir);
 
 
 app.listen(port, () => {
-    console.log('your facking is running ', port)
+    console.log('your event management api is running ', port)
 
 })
 /*
